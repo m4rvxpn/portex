@@ -151,10 +151,9 @@ func (s *PortexScanner) ScanStream(ctx context.Context, out chan<- scanner.PortR
 	// Feed probes from a dedicated goroutine so Submit doesn't block the caller.
 	go func() {
 		for _, p := range probes {
-			if ctx.Err() != nil {
+			if err := s.engine.Submit(ctx, p); err != nil {
 				break
 			}
-			_ = s.engine.Submit(p)
 		}
 		// Signal no more probes.
 		s.engine.Drain()
@@ -203,9 +202,8 @@ func detectInterface() (string, net.IP, error) {
 	if err != nil {
 		return "", nil, fmt.Errorf("udp dial for route detection: %w", err)
 	}
-	conn.Close()
-
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	conn.Close()
 	srcIP := localAddr.IP.To4()
 	if srcIP == nil {
 		return "", nil, fmt.Errorf("could not determine IPv4 source address")

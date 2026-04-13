@@ -15,7 +15,12 @@ import (
 // scanner and packet packages.
 type DispatchFunc func(ctx context.Context, p Probe) (PortResult, error)
 
-// Engine dispatches probes through a fixed goroutine pool.
+// Engine is a single-use goroutine pool for dispatching port probes.
+// Start, Submit/Drain, and Results follow a strict lifecycle:
+//  1. NewEngine → 2. Start → 3. Submit × N → 4. Drain → 5. consume Results
+//
+// Do not call Start or Submit after Drain has been called. Construct a new
+// Engine for each scan invocation.
 type Engine struct {
 	workers  int
 	probeQ   chan Probe      // buffered input queue
@@ -63,10 +68,15 @@ func (e *Engine) Start(ctx context.Context) {
 	}
 }
 
-// Submit adds a probe to the queue. Blocks if queue is full.
-func (e *Engine) Submit(p Probe) error {
-	e.probeQ <- p
-	return nil
+// Submit enqueues a probe for dispatch. Returns ctx.Err() if the context is
+// cancelled while waiting for queue space.
+func (e *Engine) Submit(ctx context.Context, p Probe) error {
+	select {
+	case e.probeQ <- p:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Results returns the channel of completed port results.
