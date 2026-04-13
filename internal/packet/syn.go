@@ -36,7 +36,7 @@ func (s *SYNScanner) Scan(ctx context.Context, dst net.IP, dstPort, srcPort int,
 		ttl = 64
 	}
 
-	key := CorrelationKey(s.srcIP.String(), dst.String(), srcPort, dstPort)
+	key := CorrelationKey(dst.String(), s.srcIP.String(), dstPort, srcPort)
 	ch := s.capture.Register(key)
 	defer s.capture.Unregister(key)
 

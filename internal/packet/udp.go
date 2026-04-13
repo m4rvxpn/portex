@@ -84,7 +84,7 @@ func (s *UDPScanner) Scan(ctx context.Context, dst net.IP, dstPort, srcPort int,
 
 	payload := getUDPPayload(dstPort)
 
-	key := CorrelationKey(s.srcIP.String(), dst.String(), srcPort, dstPort)
+	key := CorrelationKey(dst.String(), s.srcIP.String(), dstPort, srcPort)
 	ch := s.capture.Register(key)
 	defer s.capture.Unregister(key)
 

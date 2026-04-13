@@ -5,15 +5,13 @@ package packet
 import (
 	"fmt"
 	"net"
-	"unsafe"
 
 	"golang.org/x/sys/unix"
 )
 
 // htons converts a uint16 from host to network byte order.
 func htons(v uint16) uint16 {
-	b := *(*[2]byte)(unsafe.Pointer(&v))
-	return uint16(b[0])<<8 | uint16(b[1])
+	return (v<<8)&0xff00 | v>>8
 }
 
 // RawSocket is an AF_PACKET/SOCK_RAW socket for sending raw Ethernet frames.

@@ -34,7 +34,7 @@ func NewIPProtoScanner(builder *PacketBuilder, rawSock *RawSocket, capture *Capt
 // ScanProto tests whether the given IP protocol number is supported by dst.
 func (s *IPProtoScanner) ScanProto(ctx context.Context, dst net.IP, proto uint8) (scanner.PortState, string, time.Duration, error) {
 	// Use a pseudo-key based on protocol number; use port 0 for IP proto scans.
-	key := CorrelationKey(s.srcIP.String(), dst.String(), 0, int(proto))
+	key := CorrelationKey(dst.String(), s.srcIP.String(), int(proto), 0)
 	ch := s.capture.Register(key)
 	defer s.capture.Unregister(key)
 

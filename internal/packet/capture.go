@@ -61,7 +61,6 @@ func NewCapturer(iface string) (*Capturer, error) {
 // Start begins capturing packets in a background goroutine. Stops on ctx cancel.
 func (c *Capturer) Start(ctx context.Context) error {
 	src := gopacket.NewPacketSource(c.handle, c.handle.LinkType())
-	src.NoCopy = true
 
 	go func() {
 		for {
@@ -107,6 +106,9 @@ func CorrelationKey(srcIP, dstIP string, srcPort, dstPort int) string {
 // processPacket dispatches a captured packet to the matching registered channel.
 // This must never block.
 func (c *Capturer) processPacket(pkt gopacket.Packet) {
+	if pkt.ErrorLayer() != nil {
+		return
+	}
 	now := time.Now()
 
 	// Extract IP layer
@@ -158,7 +160,9 @@ func (c *Capturer) processPacket(pkt gopacket.Packet) {
 			URGPtr: tcp.Urgent,
 		}
 		if app := pkt.ApplicationLayer(); app != nil {
-			resp.Payload = app.Payload()
+			p := app.Payload()
+			resp.Payload = make([]byte, len(p))
+			copy(resp.Payload, p)
 		}
 		// key: srcIP(target):srcPort(target_resp):dstIP(us):dstPort(our_src)
 		key := CorrelationKey(srcIP.String(), dstIP.String(), resp.SrcPort, resp.DstPort)
@@ -173,7 +177,9 @@ func (c *Capturer) processPacket(pkt gopacket.Packet) {
 		resp.SrcPort = int(udp.SrcPort)
 		resp.DstPort = int(udp.DstPort)
 		if app := pkt.ApplicationLayer(); app != nil {
-			resp.Payload = app.Payload()
+			p := app.Payload()
+			resp.Payload = make([]byte, len(p))
+			copy(resp.Payload, p)
 		}
 		key := CorrelationKey(srcIP.String(), dstIP.String(), resp.SrcPort, resp.DstPort)
 		c.dispatch(key, resp)
