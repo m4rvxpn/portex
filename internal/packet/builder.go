@@ -114,6 +114,49 @@ func (b *PacketBuilder) BuildTCP(dst net.IP, dstPort, srcPort int, flags TCPFlag
 	return out, nil
 }
 
+// BuildTCPSpoofed builds a TCP frame with an arbitrary spoofed source IP.
+// Used for idle scan and decoy flooding where the source must differ from the real scanner IP.
+func (b *PacketBuilder) BuildTCPSpoofed(spoofSrc, dst net.IP, dstPort, srcPort int, flags TCPFlags, ttl uint8, payload []byte) ([]byte, error) {
+	buf := b.getBuffer()
+	defer b.putBuffer(buf)
+
+	eth := &layers.Ethernet{
+		SrcMAC:       b.srcMAC,
+		DstMAC:       b.gwMAC,
+		EthernetType: layers.EthernetTypeIPv4,
+	}
+	ip := &layers.IPv4{
+		Version:  4,
+		TTL:      ttl,
+		SrcIP:    spoofSrc,
+		DstIP:    dst,
+		Protocol: layers.IPProtocolTCP,
+	}
+	tcp := &layers.TCP{
+		SrcPort: layers.TCPPort(srcPort),
+		DstPort: layers.TCPPort(dstPort),
+		SYN:     flags.SYN,
+		ACK:     flags.ACK,
+		FIN:     flags.FIN,
+		RST:     flags.RST,
+		PSH:     flags.PSH,
+		URG:     flags.URG,
+		Urgent:  flags.URGPtr,
+		Window:  1024,
+		Seq:     randUint32(),
+	}
+	if err := tcp.SetNetworkLayerForChecksum(ip); err != nil {
+		return nil, err
+	}
+	opts := gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true}
+	if err := gopacket.SerializeLayers(buf, opts, eth, ip, tcp, gopacket.Payload(payload)); err != nil {
+		return nil, err
+	}
+	out := make([]byte, len(buf.Bytes()))
+	copy(out, buf.Bytes())
+	return out, nil
+}
+
 // BuildUDP builds an IPv4 UDP Ethernet frame.
 func (b *PacketBuilder) BuildUDP(dst net.IP, dstPort, srcPort int, ttl uint8, payload []byte) ([]byte, error) {
 	buf := b.getBuffer()

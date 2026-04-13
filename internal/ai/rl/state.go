@@ -78,8 +78,8 @@ func (s State) ToFeatureVector() []float32 {
 	vec[6] = float32((s.FilterFlags >> 1) & 0x01)
 	vec[7] = float32((s.FilterFlags >> 2) & 0x01)
 
-	// Feature 9: attempt normalized
-	vec[8] = float32(s.Attempt) / 10.0
+	// Feature 9: attempt normalized (clamped to [0,10] to keep vector in [0,1])
+	vec[8] = float32(min(s.Attempt, 10)) / 10.0
 
 	// Feature 10: protocol encoded
 	switch s.Protocol {
