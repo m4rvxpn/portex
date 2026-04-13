@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config:*)",
+      "Bash(pip show:*)",
+      "Bash(git:*)",
+      "Bash(nmap --version)",
+      "Bash(go version:*)",
+      "Bash(cat /home/dart/dart-kali/Tools/phantom-easm-v3/db/*.py)",
+      "Bash(head -100 /home/dart/dart-kali/Tools/phantom-easm-v3/db/migrations/*.sql)",
+      "Bash(apt-cache show:*)",
+      "Bash(dpkg -l libpcap-dev)",
+      "Bash(python3 -c ':*)",
+      "Bash(python3:*)",
+      "Bash(go mod:*)",
+      "Bash(go get:*)",
+      "Bash(go build:*)",
+      "Bash(go vet:*)",
+      "Bash(go list:*)"
+    ]
+  }
+}
