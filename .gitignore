@@ -33,3 +33,7 @@ go.work.sum
 
 # Git worktrees
 .worktrees/
+
+# Build output binaries
+/portex
+/bin/

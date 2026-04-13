@@ -12,8 +12,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/m4rvxpn/portex/internal/config"
+	embeddeddata "github.com/m4rvxpn/portex/internal/data"
+	osfp "github.com/m4rvxpn/portex/internal/os"
 	"github.com/m4rvxpn/portex/internal/packet"
 	"github.com/m4rvxpn/portex/internal/scanner"
+	"github.com/m4rvxpn/portex/internal/service"
 )
 
 // Scanner is the top-level interface.
@@ -24,13 +27,15 @@ type Scanner interface {
 
 // PortexScanner is the main scanner implementation.
 type PortexScanner struct {
-	cfg     *config.Config
-	engine  *scanner.Engine
-	capture *packet.Capturer
-	builder *packet.PacketBuilder
-	rawSock *packet.RawSocket
-	srcIP   net.IP
-	iface   string
+	cfg          *config.Config
+	engine       *scanner.Engine
+	capture      *packet.Capturer
+	builder      *packet.PacketBuilder
+	rawSock      *packet.RawSocket
+	srcIP        net.IP
+	iface        string
+	detector     *service.Detector
+	fingerprinter *osfp.Fingerprinter
 }
 
 // New creates a new PortexScanner from the given config.
@@ -99,14 +104,33 @@ func New(cfg *config.Config) (*PortexScanner, error) {
 
 	engine := scanner.NewEngine(cfg, dispatchFn)
 
+	// Load service probe database from embedded data.
+	probeDB, err := service.LoadProbeDB(embeddeddata.NmapServiceProbes)
+	if err != nil {
+		// Non-fatal: service detection will be unavailable.
+		probeDB = &service.ProbeDB{}
+	}
+	detector := service.NewDetector(probeDB)
+
+	// Load OS fingerprint database from embedded data.
+	osDB, err := osfp.LoadOSDB(embeddeddata.NmapOSDB)
+	if err != nil {
+		// Non-fatal: OS detection will use heuristic-only mode.
+		osDB = &osfp.OSDB{}
+	}
+	collector := osfp.NewCollector(builder, rawSock, capture, srcIP)
+	fingerprinter := osfp.NewFingerprinter(osDB, collector)
+
 	return &PortexScanner{
-		cfg:     cfg,
-		engine:  engine,
-		capture: capture,
-		builder: builder,
-		rawSock: rawSock,
-		srcIP:   srcIP,
-		iface:   iface,
+		cfg:           cfg,
+		engine:        engine,
+		capture:       capture,
+		builder:       builder,
+		rawSock:       rawSock,
+		srcIP:         srcIP,
+		iface:         iface,
+		detector:      detector,
+		fingerprinter: fingerprinter,
 	}, nil
 }
 

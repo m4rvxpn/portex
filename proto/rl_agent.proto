@@ -1,0 +1,43 @@
+syntax = "proto3";
+package rl;
+option go_package = "github.com/m4rvxpn/portex/proto/rl";
+
+// RLAgentService provides RL inference for probe optimization.
+service RLAgentService {
+    // GetAction returns the optimal action for the current state.
+    rpc GetAction(StateRequest) returns (ActionResponse);
+    // UpdateReward provides reward feedback for learning.
+    rpc UpdateReward(RewardRequest) returns (RewardResponse);
+}
+
+message StateRequest {
+    int32 port = 1;
+    string port_state = 2;
+    float response_time = 3;
+    uint32 ttl = 4;
+    uint32 window_size = 5;
+    uint32 filter_flags = 6;
+    int32 attempt = 7;
+    string protocol = 8;
+}
+
+message ActionResponse {
+    string scan_mode = 1;
+    int32 timing_delta = 2;
+    int32 src_port = 3;
+    uint32 tcp_flag_mod = 4;
+    uint32 ttl_value = 5;
+    uint32 frag_offset = 6;
+    bool use_decoy = 7;
+    string switch_proto = 8;
+}
+
+message RewardRequest {
+    StateRequest state = 1;
+    ActionResponse action = 2;
+    float reward = 3;
+}
+
+message RewardResponse {
+    bool ok = 1;
+}
