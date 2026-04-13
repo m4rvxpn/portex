@@ -134,7 +134,7 @@ func Defaults() *Config {
 		Timing:     T3,
 		MaxRetries: 6,
 		MaxRTT:     10 * time.Second,
-		Goroutines: 1000,
+		Goroutines: 5000,
 		BatchSize:  256,
 		ScriptArgs: make(map[string]string),
 	}

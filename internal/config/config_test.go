@@ -57,7 +57,7 @@ func TestValidate_IdleScanRequiresZombie(t *testing.T) {
 func TestDefaults(t *testing.T) {
 	cfg := Defaults()
 	require.NotNil(t, cfg)
-	assert.Equal(t, 1000, cfg.Goroutines)
+	assert.Equal(t, 5000, cfg.Goroutines)
 	assert.Equal(t, ModeSYN, cfg.Mode)
 	assert.Equal(t, T3, cfg.Timing)
 }
