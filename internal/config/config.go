@@ -254,7 +254,9 @@ func Load(path string) (*Config, error) {
 		cfg.ProxyAddr = v.GetString("proxy_addr")
 		cfg.UseProxy = true
 	}
-	cfg.UseProxy = v.GetBool("use_proxy")
+	if v.IsSet("use_proxy") {
+		cfg.UseProxy = v.GetBool("use_proxy")
+	}
 
 	// REST API
 	if v.IsSet("api_bind") {

@@ -69,7 +69,7 @@ func (r *RateLimiter) Wait(ctx context.Context) error {
 		}
 
 		// Calculate how long until the next token arrives.
-		wait := time.Duration((1-r.tokens)/float64(r.pps)*1e9) * time.Nanosecond
+		wait := time.Duration((1-r.tokens) / float64(r.pps) * float64(time.Second))
 		r.mu.Unlock()
 
 		select {

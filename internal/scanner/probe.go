@@ -6,7 +6,7 @@ import "time"
 // ScanMode identifies the packet-craft strategy used for a probe.
 // This mirrors config.ScanMode but is redefined here as a plain string
 // type to avoid a circular import between the scanner and config packages.
-type ScanMode = string
+type ScanMode string
 
 const (
 	// ScanModeSYN is a half-open TCP SYN scan.
