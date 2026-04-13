@@ -13,6 +13,5 @@ func AddCommonFlags(cmd *cobra.Command) {
 	f.Int("goroutines", 5000, "maximum concurrency (goroutines)")
 	f.String("output", "json", "comma-separated output formats: json,bbot,xml,csv,nuclei-yaml")
 	f.String("output-file", "", "base path for output files (empty = stdout)")
-	f.Bool("verbose", false, "enable verbose logging")
 	f.String("proxy", "", "proxy URL, e.g. socks5://127.0.0.1:1080")
 }

@@ -23,7 +23,8 @@ type Writer interface {
 // format: "json", "bbot", "xml", "csv", "nuclei-yaml"
 // w: destination io.Writer (typically os.Stdout or a file)
 // scanID: unique identifier for this scan session
-func NewWriter(format string, w io.Writer, scanID string) (Writer, error) {
+// outDir: base output directory (used by nuclei-yaml; falls back to "./portex-nuclei" if empty)
+func NewWriter(format string, w io.Writer, scanID string, outDir string) (Writer, error) {
 	switch format {
 	case "json":
 		return NewJSONWriter(w), nil
@@ -34,8 +35,12 @@ func NewWriter(format string, w io.Writer, scanID string) (Writer, error) {
 	case "csv":
 		return NewCSVWriter(w), nil
 	case "nuclei-yaml":
-		// nuclei-yaml writes files to a directory; caller passes a dir path via scanID.
-		return NewNucleiYAMLWriter(scanID), nil
+		// nuclei-yaml writes files to a directory; use outDir, falling back to a safe default.
+		dir := outDir
+		if dir == "" {
+			dir = "./portex-nuclei"
+		}
+		return NewNucleiYAMLWriter(dir), nil
 	default:
 		return nil, fmt.Errorf("unknown output format %q: supported formats are json, bbot, xml, csv, nuclei-yaml", format)
 	}

@@ -173,8 +173,10 @@ func (h *Handler) StartScan(w http.ResponseWriter, r *http.Request) {
 
 		entry.mu.Lock()
 		entry.result.EndTime = time.Now()
-		entry.status.State = "completed"
-		entry.status.Progress = 1.0
+		if entry.status.State != "cancelled" {
+			entry.status.State = "completed"
+			entry.status.Progress = 1.0
+		}
 		entry.status.Duration = time.Since(entry.status.StartedAt).String()
 		entry.mu.Unlock()
 

@@ -56,7 +56,7 @@ func runScan(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("no targets specified: use -t/--targets")
 	}
 
-	verbose, _ := cmd.Flags().GetBool("verbose")
+	verbose, _ := cmd.Root().PersistentFlags().GetBool("verbose")
 
 	// Build output writers.
 	writer, err := buildOutputWriter(cfg)
@@ -139,7 +139,7 @@ func buildConfig(cmd *cobra.Command) (*config.Config, error) {
 	cfg.OutputFormat = splitComma(outputFmt)
 
 	cfg.OutputFile, _ = cmd.Flags().GetString("output-file")
-	cfg.Verbose, _ = cmd.Flags().GetBool("verbose")
+	cfg.Verbose, _ = cmd.Root().PersistentFlags().GetBool("verbose")
 
 	proxyURL, _ := cmd.Flags().GetString("proxy")
 	if proxyURL != "" {
@@ -216,7 +216,7 @@ func buildOutputWriter(cfg *config.Config) (output.Writer, error) {
 			return nil, err
 		}
 		_ = closer
-		w, err := output.NewWriter(cfg.OutputFormat[0], dest, cfg.PhantomScanID)
+		w, err := output.NewWriter(cfg.OutputFormat[0], dest, cfg.PhantomScanID, cfg.OutputFile)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +230,7 @@ func buildOutputWriter(cfg *config.Config) (output.Writer, error) {
 		if err != nil {
 			return nil, err
 		}
-		w, err := output.NewWriter(fmt, dest, cfg.PhantomScanID)
+		w, err := output.NewWriter(fmt, dest, cfg.PhantomScanID, cfg.OutputFile)
 		if err != nil {
 			return nil, err
 		}
