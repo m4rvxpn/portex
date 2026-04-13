@@ -62,9 +62,14 @@ func (e *Engine) RunScript(ctx context.Context, name string, port scanner.PortRe
 	}
 
 	L := e.vmPool.Get().(*lua.LState)
+	vmOk := false
 	defer func() {
-		// Reset globals before returning to pool
-		e.vmPool.Put(L)
+		if vmOk {
+			e.vmPool.Put(L)
+		} else {
+			L.Close()
+			e.vmPool.Put(e.newVM()) // put a fresh VM back so pool size stays stable
+		}
 	}()
 
 	// Create a fresh API context for this run
@@ -74,27 +79,32 @@ func (e *Engine) RunScript(ctx context.Context, name string, port scanner.PortRe
 	// Register portex.* into this VM
 	api.Register(L)
 
-	// Set deadline on the Lua VM context via Go context cancellation
-	errCh := make(chan error, 1)
+	type result struct {
+		err error
+	}
+	resCh := make(chan result, 1)
 	go func() {
-		if err := L.DoString(source); err != nil {
-			errCh <- err
-			return
-		}
-		errCh <- nil
+		defer func() {
+			if r := recover(); r != nil {
+				resCh <- result{err: fmt.Errorf("script panic: %v", r)}
+			}
+		}()
+		err := L.DoString(source)
+		resCh <- result{err: err}
 	}()
 
 	select {
 	case <-ctx.Done():
-		L.Close()
-		// Replace the consumed VM in pool with a fresh one
-		e.vmPool.Put(e.newVM())
+		vmOk = false
 		return "", ctx.Err()
-	case err := <-errCh:
-		if err != nil {
-			return "", fmt.Errorf("script %q: %w", name, err)
+	case res := <-resCh:
+		if res.err != nil {
+			vmOk = false
+			return "", fmt.Errorf("script %q: %w", name, res.err)
 		}
 	}
+
+	vmOk = true
 
 	// Collect output: concatenate all setresult values
 	output := ""
@@ -144,19 +154,18 @@ func (e *Engine) RunAll(ctx context.Context, port scanner.PortResult) (map[strin
 }
 
 // newVM creates a fresh sandboxed Lua VM.
-// Disabled: io, os, debug, package.
-// Enabled: string, table, math, base.
+// Only safe libraries are loaded: base, table, string, math.
+// io, os, debug, package are never opened.
 func (e *Engine) newVM() *lua.LState {
 	L := lua.NewState(lua.Options{
 		SkipOpenLibs: true,
 	})
 
-	// Open only safe libraries
+	// Open only safe libraries — package/require are intentionally excluded
 	for _, pair := range []struct {
 		name string
 		fn   lua.LGFunction
 	}{
-		{lua.LoadLibName, lua.OpenPackage}, // needed for require; we restrict it below
 		{lua.BaseLibName, lua.OpenBase},
 		{lua.TabLibName, lua.OpenTable},
 		{lua.StringLibName, lua.OpenString},
@@ -167,15 +176,10 @@ func (e *Engine) newVM() *lua.LState {
 		L.Call(1, 0)
 	}
 
-	// Remove dangerous globals
-	L.SetGlobal("require", lua.LNil)
+	// Remove dangerous globals that base lib exposes
 	L.SetGlobal("load", lua.LNil)
 	L.SetGlobal("loadfile", lua.LNil)
 	L.SetGlobal("dofile", lua.LNil)
-	L.SetGlobal("io", lua.LNil)
-	L.SetGlobal("os", lua.LNil)
-	L.SetGlobal("debug", lua.LNil)
-	L.SetGlobal("package", lua.LNil)
 
 	return L
 }

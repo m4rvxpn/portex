@@ -350,28 +350,16 @@ func parseMatchRule(line string) (MatchRule, error) {
 		Service: parts[1],
 	}
 
-	// Parse the pattern field: m[<predelim>][flags]<delim><pattern><delim>[flags]
+	// Parse the pattern field: m<delim>pattern<delim>[i]
+	// The character immediately after 'm' is the delimiter (e.g. m|pattern|i or m/pattern/i).
+	// Pre-delimiter flags are not used in the nmap-service-probes file.
 	patternStr := parts[2]
-	if len(patternStr) < 2 || patternStr[0] != 'm' {
+	if len(patternStr) < 3 || patternStr[0] != 'm' {
 		return MatchRule{}, fmt.Errorf("invalid match pattern: %q", patternStr)
 	}
 
-	// Check for flags before delimiter: m|...| or m%i|...|
-	idx := 1
-	// Optional flags before the delimiter
-	var preFlags string
-	for idx < len(patternStr) && patternStr[idx] != '|' && patternStr[idx] != '/' && patternStr[idx] != '%' {
-		// collect pre-delimiter flags if any (nmap uses m|...|i form mostly)
-		break
-	}
-	_ = preFlags
-
-	if idx >= len(patternStr) {
-		return MatchRule{}, fmt.Errorf("no delimiter in pattern: %q", patternStr)
-	}
-
-	delim := patternStr[idx]
-	rest := patternStr[idx+1:]
+	delim := patternStr[1]
+	rest := patternStr[2:]
 	end := strings.IndexByte(rest, delim)
 	if end < 0 {
 		return MatchRule{}, fmt.Errorf("no closing delimiter in pattern: %q", patternStr)
@@ -380,8 +368,11 @@ func parseMatchRule(line string) (MatchRule, error) {
 	pattern := rest[:end]
 	afterDelim := rest[end+1:]
 
-	// afterDelim may contain flags like "i"
-	flags := afterDelim
+	// afterDelim may contain post-flags like "i" for case-insensitive
+	flags := ""
+	if len(afterDelim) > 0 && afterDelim[0] == 'i' {
+		flags = "i"
+	}
 	rule.Pattern = pattern
 	rule.Flags = flags
 
