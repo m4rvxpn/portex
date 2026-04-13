@@ -37,12 +37,10 @@ func (e *Engine) LoadScript(name, source string) error {
 	L := e.newVM()
 	defer L.Close()
 
-	fn, err := L.LoadString(source)
+	_, err := L.LoadString(source)
 	if err != nil {
 		return fmt.Errorf("script %q: %w", name, err)
 	}
-	L.Pop(1) // discard the function
-	_ = fn
 
 	e.mu.Lock()
 	e.scripts[name] = source
