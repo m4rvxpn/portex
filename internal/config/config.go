@@ -313,10 +313,10 @@ func (c *Config) Validate() error {
 	}
 	if c.EnableLLM {
 		switch c.LLMProvider {
-		case "claude", "ollama", "":
+		case "claude", "ollama", "gemini", "":
 			// ok
 		default:
-			return fmt.Errorf("unknown llm_provider %q: must be \"claude\" or \"ollama\"", c.LLMProvider)
+			return fmt.Errorf("unknown llm_provider %q: must be \"claude\", \"ollama\", or \"gemini\"", c.LLMProvider)
 		}
 	}
 	return nil

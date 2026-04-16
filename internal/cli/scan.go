@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
+	"github.com/m4rvxpn/portex/internal/ai/llm"
 	"github.com/m4rvxpn/portex/internal/config"
 	"github.com/m4rvxpn/portex/internal/output"
 	"github.com/m4rvxpn/portex/internal/portex"
@@ -37,7 +38,7 @@ func NewScanCmd() *cobra.Command {
 	f.Bool("mutate", false, "enable packet-level payload mutation")
 	f.Bool("mimic", false, "enable traffic mimicry (browser/app emulation)")
 	f.Bool("llm", false, "enable LLM-based enrichment")
-	f.String("llm-provider", "claude", "LLM provider: claude or ollama")
+	f.String("llm-provider", "claude", "LLM provider: claude, ollama, or gemini")
 	f.String("llm-model", "", "LLM model identifier (provider-specific)")
 	f.String("zombie", "", "zombie host:port for idle scan")
 	f.String("session-id", "", "Phantom EASM pipeline session ID")
@@ -77,6 +78,23 @@ func runScan(cmd *cobra.Command, _ []string) error {
 		ctx = context.Background()
 	}
 
+	// Build LLM enricher based on provider config.
+	var enricher llm.LLMEnricher = &llm.NoopEnricher{}
+	if cfg.EnableLLM {
+		switch cfg.LLMProvider {
+		case "gemini":
+			enricher = llm.NewGeminiEnricher("", cfg.LLMModel)
+		case "ollama":
+			enricher = llm.NewOllamaEnricher("", cfg.LLMModel)
+		default: // "claude" or empty
+			enricher = llm.NewClaudeEnricher("", cfg.LLMModel)
+		}
+		if !enricher.IsEnabled() {
+			log.Warn().Str("provider", cfg.LLMProvider).Msg("LLM enrichment requested but no API key found; enrichment disabled")
+			enricher = &llm.NoopEnricher{}
+		}
+	}
+
 	resultChan := make(chan scanner.PortResult, 1000)
 	if err := s.ScanStream(ctx, resultChan); err != nil {
 		return fmt.Errorf("start scan: %w", err)
@@ -89,6 +107,13 @@ func runScan(cmd *cobra.Command, _ []string) error {
 	}
 
 	for r := range resultChan {
+		if r.State == scanner.StateOpen && enricher.IsEnabled() {
+			if enrichment, err := enricher.Enrich(ctx, r); err != nil {
+				log.Warn().Err(err).Str("target", r.Target).Int("port", r.Port).Msg("LLM enrichment failed")
+			} else if enrichment != nil {
+				r.LLMEnrich = enrichment
+			}
+		}
 		if err := writer.WritePort(r); err != nil {
 			log.Warn().Err(err).Msg("write port result")
 		}
