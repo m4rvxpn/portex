@@ -105,6 +105,16 @@ export ANTHROPIC_API_KEY=sk-ant-api03-...
 sudo -E ./bin/portex scan -t 10.0.0.1 -p top100 --llm --llm-provider claude
 ```
 
+### Gemini (Google)
+
+```bash
+export GEMINI_API_KEY=AIza...
+sudo -E ./bin/portex scan -t 10.0.0.1 -p top100 --llm --llm-provider gemini
+```
+
+Default model is `gemini-2.0-flash`. Override with `--llm-model gemini-1.5-pro`.
+Requires a Google AI Studio API key with quota available.
+
 ### Ollama (local)
 
 ```bash

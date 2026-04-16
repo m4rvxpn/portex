@@ -122,6 +122,8 @@ Decoy source IPs are selected from the global unicast space, avoiding RFC1918, l
 
 For every open port that has a detected service/version, the LLM enricher queries an LLM with the port result and returns structured intelligence.
 
+Three providers are available via `--llm-provider`:
+
 ### Claude (default)
 
 ```bash
@@ -130,6 +132,16 @@ sudo -E ./bin/portex scan -t 10.0.0.1 -p 443 --service-detect --llm
 ```
 
 Model: `claude-sonnet-4-6`
+
+### Gemini
+
+```bash
+export GEMINI_API_KEY=AIza...
+sudo -E ./bin/portex scan -t 10.0.0.1 -p 443 --service-detect --llm --llm-provider gemini
+```
+
+Model: `gemini-2.0-flash` (default). Override with `--llm-model gemini-1.5-pro`.
+Reads `GEMINI_API_KEY` env var. Uses the `generateContent` REST API — no SDK dependency.
 
 ### Ollama
 

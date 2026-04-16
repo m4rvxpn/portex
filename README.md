@@ -28,7 +28,7 @@ Portex is a high-performance, AI-augmented port scanner written in Go. It replic
 | Adaptive probe logic | Static | RL agent (ONNX/heuristic) |
 | Firewall evasion | Manual flags | Automatic payload mutation + mimicry |
 | Output | XML / grepable | JSON, BBOT NDJSON, nuclei YAML, CSV, XML |
-| Post-scan enrichment | Scripts | LLM (Claude / Ollama) |
+| Post-scan enrichment | Scripts | LLM (Claude / Gemini / Ollama) |
 | Pipeline integration | None | bbot / phantom-easm native |
 
 
@@ -134,7 +134,7 @@ AI layers:
   --mutate                payload mutation (Layer 2)
   --mimic                 traffic mimicry (Layer 4)
   --llm                   LLM enrichment (Layer 5)
-  --llm-provider string   claude | ollama (default: claude)
+  --llm-provider string   claude | gemini | ollama (default: claude)
 
 Output:
   --output string         formats: json,bbot,xml,csv,nuclei-yaml (comma-sep)
@@ -216,12 +216,16 @@ Events carry deterministic UUID v5 IDs keyed on `(type, host, port)` for dedup i
 
 ## LLM Enrichment
 
-Set `ANTHROPIC_API_KEY` for Claude, or point at a local Ollama instance:
+Three providers supported — pick one:
 
 ```bash
 # Claude (default)
 export ANTHROPIC_API_KEY=sk-ant-...
 sudo -E ./bin/portex scan -t 10.0.0.1 -p top100 --llm
+
+# Gemini
+export GEMINI_API_KEY=AIza...
+sudo -E ./bin/portex scan -t 10.0.0.1 -p top100 --llm --llm-provider gemini
 
 # Ollama (local, no API key)
 sudo ./bin/portex scan -t 10.0.0.1 -p top100 --llm --llm-provider ollama
@@ -277,6 +281,7 @@ Full wiki in [`docs/`](docs/):
 | [bbot Integration](docs/bbot-integration.md) | Phantom-easm pipeline wiring |
 | [Configuration](docs/configuration.md) | All flags, env vars, config file format |
 | [Use Cases](docs/use-cases.md) | Red team, bug bounty, asset inventory, EASM |
+| [Firewall Lab](docs/lab.md) | Docker lab for testing all 5 AI layers against live AI firewalls |
 
 
 ## Legal

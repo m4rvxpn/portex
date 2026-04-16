@@ -18,7 +18,7 @@ Portex reads configuration from (in priority order, highest to lowest):
 | `max-retries` | `6` | Per-port retry limit |
 | `max-rtt` | `10s` | Per-probe timeout |
 | `batch-size` | `256` | Probe batch size |
-| `llm-provider` | `claude` | LLM backend |
+| `llm-provider` | `claude` | LLM backend (claude, gemini, ollama) |
 | `output` | `json` | Output format(s) |
 
 ## Config File
@@ -44,7 +44,7 @@ enable_rl: false
 enable_mutator: false
 enable_mimicry: false
 enable_llm: false
-llm_provider: claude   # claude | ollama
+llm_provider: claude   # claude | gemini | ollama
 ollama_host: http://localhost:11434
 
 # Output
@@ -73,6 +73,7 @@ All config keys are available as `PORTEX_<KEY>` (uppercase, underscores).
 | `PORTEX_LLM_PROVIDER` | `claude` |
 | `PORTEX_OLLAMA_HOST` | `http://localhost:11434` |
 | `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| `GEMINI_API_KEY` | `AIza...` |
 | `HTTP_PROXY` | `http://proxy:8080` |
 | `SOCKS5_PROXY` | `socks5://proxy:1080` |
 
